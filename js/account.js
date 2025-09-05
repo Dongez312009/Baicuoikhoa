@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const accountDiv = document.getElementById("accountInfo");
     const user = JSON.parse(localStorage.getItem("currentUser"));
     if (!user) {
-        accountDiv.innerHTML = "<p>Bạn chưa đăng nhập. Vui lòng <a href='Dangnhap.html'>đăng nhập</a>.</p>";
+        accountDiv.innerHTML = "<p>Bạn chưa đăng nhập. Vui lòng <a href='login.html'>đăng nhập</a>.</p>";
         document.getElementById("logoutBtn").style.display = "none";
         return;
     }
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("logoutBtn").addEventListener("click", function () {
         localStorage.removeItem("currentUser");
         showAlert("success", "Bạn đã đăng xuất.");
-        setTimeout(() => window.location.href = "baicuoikhoa.html", 1500);
+        setTimeout(() => window.location.href = "final_internship.html", 1500);
     });
 });
 document.addEventListener("DOMContentLoaded", function () {
@@ -93,15 +93,40 @@ function showUpdateForm(type) {
                onmouseleave="togglePassword('confirmPassword', false)"></i>
           </div>
           <button class="btn btn-primary" onclick="updateInfo('password')">Lưu</button>
+          <p class="mt-2"><a href="#" onclick="showUpdateForm('forgotPassword')" style="text-decoration:none; color:#dc3545;">Quên mật khẩu?</a></p>
+        `;
+    }
+    else if (type === "forgotPassword") {
+        formHTML = `
+          <h5>Quên mật khẩu</h5>
+          <input type="email" id="resetEmail" class="form-control mb-2" placeholder="Nhập email đã đăng ký">
+          <div class="mb-2 position-relative">
+            <input type="password" id="resetNewPassword" class="form-control" placeholder="Mật khẩu mới">
+            <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-2" 
+               style="cursor:pointer;" 
+               onmousedown="togglePassword('resetNewPassword', true)" 
+               onmouseup="togglePassword('resetNewPassword', false)" 
+               onmouseleave="togglePassword('resetNewPassword', false)"></i>
+          </div>
+          <div class="mb-2 position-relative">
+            <input type="password" id="resetConfirmPassword" class="form-control" placeholder="Xác nhận mật khẩu mới">
+            <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-2" 
+               style="cursor:pointer;" 
+               onmousedown="togglePassword('resetConfirmPassword', true)" 
+               onmouseup="togglePassword('resetConfirmPassword', false)" 
+               onmouseleave="togglePassword('resetConfirmPassword', false)"></i>
+          </div>
+          <button class="btn btn-warning" onclick="updateInfo('forgotPassword')">Đặt lại mật khẩu</button>
         `;
     }
     container.innerHTML = formHTML;
 }
-/* ---------- HÀM HIỆN/ẨN MẬT KHẨU ---------- */
+/* ---------- TOGGLE PASSWORD (MẮT 👁️) ---------- */
 function togglePassword(id, show) {
     const field = document.getElementById(id);
-    field.type = show ? "text" : "password";
+    if (field) field.type = show ? "text" : "password";
 }
+
 /* ---------- HÀM THÔNG BÁO BOOTSTRAP ---------- */
 function showAlert(type, message) {
     const alertBox = document.getElementById("alertBox");
@@ -133,8 +158,7 @@ function updateInfo(type) {
         const newEmail = document.getElementById("newEmail").value.trim();
         if (oldEmail !== user.email) return showAlert("error", "Email cũ không đúng!");
         if (!newEmail) return showAlert("error", "Email mới không được để trống!");
-        // ❌ Không kiểm tra trùng email
-        user.email = newEmail;
+        user.email = newEmail; // ❌ cho phép email trùng
         localStorage.setItem("currentUser", JSON.stringify(user));
         users = users.map(u => u.username === user.username ? user : u);
     }
@@ -142,17 +166,31 @@ function updateInfo(type) {
         const oldPass = document.getElementById("oldPassword").value.trim();
         const newPass = document.getElementById("newPassword").value.trim();
         const confirmPass = document.getElementById("confirmPassword").value.trim();
-        if (oldPass !== user.password) 
-            return showAlert("error", "Mật khẩu cũ không đúng!");
-        if (!newPass) 
-            return showAlert("error", "Mật khẩu mới không được để trống!");
-        if (newPass === oldPass) 
-            return showAlert("error", "Mật khẩu mới không được trùng với mật khẩu cũ!");
-        if (newPass !== confirmPass) 
-            return showAlert("error", "Mật khẩu xác nhận không khớp!");
+        if (oldPass !== user.password) return showAlert("error", "Mật khẩu cũ không đúng!");
+        if (!newPass) return showAlert("error", "Mật khẩu mới không được để trống!");
+        if (newPass === oldPass) return showAlert("error", "Mật khẩu mới không được trùng mật khẩu cũ!");
+        if (newPass !== confirmPass) return showAlert("error", "Mật khẩu xác nhận không khớp!");
         user.password = newPass;
         localStorage.setItem("currentUser", JSON.stringify(user));
         users = users.map(u => u.username === user.username ? user : u);
+    }
+    if (type === "forgotPassword") {
+        const email = document.getElementById("resetEmail").value.trim();
+        const newPass = document.getElementById("resetNewPassword").value.trim();
+        const confirmPass = document.getElementById("resetConfirmPassword").value.trim();
+        let targetUser = users.find(u => u.email === email);
+        if (!targetUser) return showAlert("error", "Không tìm thấy tài khoản với email này!");
+        if (!newPass) return showAlert("error", "Mật khẩu mới không được để trống!");
+        if (newPass === targetUser.password) return showAlert("error", "Mật khẩu mới không được trùng với mật khẩu cũ!");
+        if (newPass !== confirmPass) return showAlert("error", "Mật khẩu xác nhận không khớp!");
+        targetUser.password = newPass;
+        users = users.map(u => u.email === email ? targetUser : u);
+        // Nếu user đang đăng nhập bằng email này → update luôn currentUser
+        let currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        if (currentUser && currentUser.email === email) {
+            currentUser.password = newPass;
+            localStorage.setItem("currentUser", JSON.stringify(currentUser));
+        }
     }
     localStorage.setItem("users", JSON.stringify(users));
     showAlert("success", "Cập nhật thông tin thành công!");
